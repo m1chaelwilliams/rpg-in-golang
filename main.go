@@ -1,8 +1,7 @@
-// the package our code is scoped to. The `main` package is where the program's entry point lives
 package main
 
-// All imports we are using in this file
 import (
+	"image"
 	"image/color"
 	"log"
 
@@ -10,40 +9,74 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-// Our struct that impliments the `ebiten.Game` interface
-// No `impliments x` needed in Golang, the compiler does that for you!
-type Game struct{}
+type Game struct {
+	// the image and position variables for our player
+	PlayerImg *ebiten.Image
+	X, Y      float64
+}
 
-// where all of our update functionality will live
 func (g *Game) Update() error {
+
+	// move the player based on keyboar input (left, right, up down)
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
+		g.X -= 2
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyRight) {
+		g.X += 2
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyUp) {
+		g.Y -= 2
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyDown) {
+		g.Y += 2
+	}
+
 	return nil
 }
 
-// where all of our draw functionality will live
 func (g *Game) Draw(screen *ebiten.Image) {
 
-	// fills the screen with a light blue color
+	// fill the screen with a nice sky color
 	screen.Fill(color.RGBA{120, 180, 255, 255})
 
-	// draws "Hello, World!" on the screen
-	ebitenutil.DebugPrint(screen, "Hello, World!")
+	opts := ebiten.DrawImageOptions{}
+	// set the translation of our drawImageOptions to the player's position
+	opts.GeoM.Translate(g.X, g.Y)
+
+	// draw the player
+	screen.DrawImage(
+		// grab a subimage of the spritesheet
+		g.PlayerImg.SubImage(
+			image.Rect(0, 0, 16, 16),
+		).(*ebiten.Image),
+		&opts,
+	)
 
 }
 
-// determines the dimensions of our rendering canvas (not the window size!)
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth, outsideHeight
+	return 320, 240
 }
 
-// the entry point of our application
 func main() {
-	// setting various parameters of the app
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
-	// running the game and handling any errors that are routed up to us
-	if err := ebiten.RunGame(&Game{}); err != nil {
+	// load the image from file
+	playerImg, _, err := ebitenutil.NewImageFromFile("assets/images/ninja.png")
+	if err != nil {
+		// handle error
+		log.Fatal(err)
+	}
+
+	game := Game{
+		PlayerImg: playerImg,
+		X:         0.0,
+		Y:         0.0,
+	}
+
+	if err := ebiten.RunGame(&game); err != nil {
 		log.Fatal(err)
 	}
 }
