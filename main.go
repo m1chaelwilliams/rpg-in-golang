@@ -5,39 +5,20 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"rpg-tutorial/entities"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-// the base struct for all our moving, drawn entities
-type Sprite struct {
-	Img  *ebiten.Image
-	X, Y float64
-}
-
-type Player struct {
-	*Sprite
-	Health uint
-}
-
-type Enemy struct {
-	*Sprite
-	FollowsPlayer bool
-}
-
-type Potion struct {
-	*Sprite
-	AmtHeal uint
-}
-
 type Game struct {
 	// the image and position variables for our player
-	player      *Player
-	enemies     []*Enemy
-	potions     []*Potion
+	player      *entities.Player
+	enemies     []*entities.Enemy
+	potions     []*entities.Potion
 	tilemapJSON *TilemapJSON
 	tilemapImg  *ebiten.Image
+	cam         *Camera
 }
 
 func (g *Game) Update() error {
@@ -84,6 +65,14 @@ func (g *Game) Update() error {
 
 	}
 
+	g.cam.FollowTarget(g.player.X+8, g.player.Y+8, 320, 240)
+	g.cam.Constrain(
+		float64(g.tilemapJSON.Layers[0].Width)*16.0,
+		float64(g.tilemapJSON.Layers[0].Height)*16.0,
+		320,
+		240,
+	)
+
 	return nil
 }
 
@@ -118,6 +107,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			// set the drawimageoptions to draw the tile at x, y
 			opts.GeoM.Translate(float64(x), float64(y))
 
+			opts.GeoM.Translate(g.cam.X, g.cam.Y)
+
 			// draw the tile
 			screen.DrawImage(
 				// cropping out the tile that we want from the spritesheet
@@ -132,6 +123,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// set the translation of our drawImageOptions to the player's position
 	opts.GeoM.Translate(g.player.X, g.player.Y)
+	opts.GeoM.Translate(g.cam.X, g.cam.Y)
 
 	// draw the player
 	screen.DrawImage(
@@ -146,6 +138,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	for _, sprite := range g.enemies {
 		opts.GeoM.Translate(sprite.X, sprite.Y)
+		opts.GeoM.Translate(g.cam.X, g.cam.Y)
 
 		screen.DrawImage(
 			sprite.Img.SubImage(
@@ -161,6 +154,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	for _, sprite := range g.potions {
 		opts.GeoM.Translate(sprite.X, sprite.Y)
+		opts.GeoM.Translate(g.cam.X, g.cam.Y)
 
 		screen.DrawImage(
 			sprite.Img.SubImage(
@@ -214,44 +208,45 @@ func main() {
 	}
 
 	game := Game{
-		player: &Player{
-			Sprite: &Sprite{
+		player: &entities.Player{
+			Sprite: &entities.Sprite{
 				Img: playerImg,
 				X:   50.0,
 				Y:   50.0,
 			},
 			Health: 3,
 		},
-		enemies: []*Enemy{
+		enemies: []*entities.Enemy{
 			{
-				&Sprite{
+				Sprite: &entities.Sprite{
 					Img: skeletonImg,
 					X:   100.0,
 					Y:   100.0,
 				},
-				true,
+				FollowsPlayer: true,
 			},
 			{
-				&Sprite{
+				Sprite: &entities.Sprite{
 					Img: skeletonImg,
 					X:   150.0,
 					Y:   50.0,
 				},
-				false,
+				FollowsPlayer: false,
 			},
 		},
-		potions: []*Potion{
+		potions: []*entities.Potion{
 			{
-				&Sprite{
+				Sprite: &entities.Sprite{
 					Img: potionImg,
 					X:   210.0,
 					Y:   100.0,
 				},
-				1.0,
+				AmtHeal: 1.0,
 			},
 		},
 		tilemapJSON: tilemapJSON,
 		tilemapImg:  tilemapImg,
+		cam:         NewCamera(0.0, 0.0),
 	}
 
 	if err := ebiten.RunGame(&game); err != nil {
