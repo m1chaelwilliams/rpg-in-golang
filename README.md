@@ -6,6 +6,11 @@ A [video series](https://youtube.com/playlist?list=PLvN4CrYN-8i7xnODFyCMty6ossz4
 This project uses git branches to manage the different episodes. Click on the branch labelled `main` in the topleft and select the appropriate episode:
 ![Screenshot of selecting a branch](./github_assets/branches.png)
 
+# File structure
+ - `assets/` contains all assets used in the game
+ - `entities/` contains all entity types
+ - `github_assets/` ignore, this is for the documentation
+
 # License
 
 All code is licensed under [MIT](./LICENSE)

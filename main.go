@@ -165,7 +165,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 		opts.GeoM.Reset()
 	}
-
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
