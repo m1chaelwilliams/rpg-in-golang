@@ -5,10 +5,11 @@ import (
 	"image"
 	"image/color"
 	"log"
-	"rpg-tutorial/entities"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+
+	"rpg-tutorial/entities"
 )
 
 type Game struct {
@@ -17,12 +18,12 @@ type Game struct {
 	enemies     []*entities.Enemy
 	potions     []*entities.Potion
 	tilemapJSON *TilemapJSON
+	tilesets    []Tileset
 	tilemapImg  *ebiten.Image
 	cam         *Camera
 }
 
 func (g *Game) Update() error {
-
 	// move the player based on keyboar input (left, right, up down)
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
 		g.player.X -= 2
@@ -39,7 +40,6 @@ func (g *Game) Update() error {
 
 	// add behavior to the enemies
 	for _, sprite := range g.enemies {
-
 		if sprite.FollowsPlayer {
 			if sprite.X < g.player.X {
 				sprite.X += 1
@@ -52,17 +52,14 @@ func (g *Game) Update() error {
 				sprite.Y -= 1
 			}
 		}
-
 	}
 
 	// handle simple potion functionality
 	for _, potion := range g.potions {
-
 		if g.player.X > potion.X {
 			g.player.Health += potion.AmtHeal
 			fmt.Printf("Picked up potion! Health: %d\n", g.player.Health)
 		}
-
 	}
 
 	g.cam.FollowTarget(g.player.X+8, g.player.Y+8, 320, 240)
@@ -77,16 +74,19 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-
 	// fill the screen with a nice sky color
 	screen.Fill(color.RGBA{120, 180, 255, 255})
 
 	opts := ebiten.DrawImageOptions{}
 
 	// loop over the layers
-	for _, layer := range g.tilemapJSON.Layers {
+	for layerIndex, layer := range g.tilemapJSON.Layers {
 		// loop over the tiles in the layer data
 		for index, id := range layer.Data {
+
+			if id == 0 {
+				continue
+			}
 
 			// get the tile position of the tile
 			x := index % layer.Width
@@ -96,25 +96,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			x *= 16
 			y *= 16
 
-			// get the position on the image where the tile id is
-			srcX := (id - 1) % 22
-			srcY := (id - 1) / 22
+			img := g.tilesets[layerIndex].Img(id)
 
-			// convert the src tile pos to pixel src position
-			srcX *= 16
-			srcY *= 16
-
-			// set the drawimageoptions to draw the tile at x, y
 			opts.GeoM.Translate(float64(x), float64(y))
+
+			opts.GeoM.Translate(0.0, -(float64(img.Bounds().Dy()) + 16))
 
 			opts.GeoM.Translate(g.cam.X, g.cam.Y)
 
-			// draw the tile
-			screen.DrawImage(
-				// cropping out the tile that we want from the spritesheet
-				g.tilemapImg.SubImage(image.Rect(srcX, srcY, srcX+16, srcY+16)).(*ebiten.Image),
-				&opts,
-			)
+			screen.DrawImage(img, &opts)
 
 			// reset the opts for the next tile
 			opts.GeoM.Reset()
@@ -206,6 +196,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	tilesets, err := tilemapJSON.GenTilesets()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	game := Game{
 		player: &entities.Player{
 			Sprite: &entities.Sprite{
@@ -245,6 +240,7 @@ func main() {
 		},
 		tilemapJSON: tilemapJSON,
 		tilemapImg:  tilemapImg,
+		tilesets:    tilesets,
 		cam:         NewCamera(0.0, 0.0),
 	}
 
