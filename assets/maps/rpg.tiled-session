@@ -8,11 +8,11 @@
     ],
     "fileStates": {
         "spawn.json": {
-            "scale": 1,
+            "scale": 2,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 198.5,
-                "y": 237.5
+                "x": 262.75,
+                "y": 231.25
             }
         },
         "tilesets/TilesetFloor.json": {
