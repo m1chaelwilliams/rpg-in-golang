@@ -1,9 +1,11 @@
-package main
+package tilemap
 
 import (
 	"encoding/json"
 	"os"
 	"path"
+
+	"rpg-tutorial/tileset"
 )
 
 // data we want for one layer in our list of layers
@@ -22,13 +24,13 @@ type TilemapJSON struct {
 }
 
 // temp function to generate all of our tilesets and return a slice of them
-func (t *TilemapJSON) GenTilesets() ([]Tileset, error) {
-	tilesets := make([]Tileset, 0)
+func (t *TilemapJSON) GenTilesets() ([]tileset.Tileset, error) {
+	tilesets := make([]tileset.Tileset, 0)
 
 	for _, tilesetData := range t.Tilesets {
 		// convert map relative path to project relative path
 		tilesetPath := path.Join("assets/maps/", tilesetData["source"].(string))
-		tileset, err := NewTileset(tilesetPath, int(tilesetData["firstgid"].(float64)))
+		tileset, err := tileset.NewTileset(tilesetPath, int(tilesetData["firstgid"].(float64)))
 		if err != nil {
 			return nil, err
 		}
